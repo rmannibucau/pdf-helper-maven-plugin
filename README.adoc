@@ -24,7 +24,7 @@ NOTE: all parameters are optional.
       <configuration>
         <pdfs>
           <pdf>
-            <location>${project.build.directory}/generated-docs/tribestream.pdf</location>
+            <location>foo/bar/pdf1.pdf</location>
             <title>Title 1</title>
             <titleSize>45</titleSize>
             <titleFont>Helvetica</titleFont>
@@ -33,7 +33,7 @@ NOTE: all parameters are optional.
             <descriptionFont>Helvetica-Bold</descriptionFont>
           </pdf>
           <pdf>
-            <location>${project.build.directory}/generated-docs/tribestream-security.pdf</location>
+            <location>${project.build.directory}/generated-docs/pdf2.pdf</location>
             <title>Title 2</title>
           </pdf>
         </pdfs>
