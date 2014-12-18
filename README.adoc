@@ -1,0 +1,58 @@
+= Goal
+
+Be able to merge PDFs together (aggregation) easily.
+
+NOTE: it uses PDFBox behind the scene.
+
+= Usage
+
+NOTE: all parameters are optional.
+
+[source,xml,numbered]
+----
+<plugin>
+  <groupId>com.github.rmannibucau</groupId>
+  <artifactId>pdf-helper-maven-plugin</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <executions>
+    <execution>
+      <id>pdf-all-in-one</id>
+      <phase>generate-resources</phase> <!-- default is package -->
+      <goals>
+        <goal>merge</goal>
+      </goals>
+      <configuration>
+        <pdfs>
+          <pdf>
+            <location>${project.build.directory}/generated-docs/tribestream.pdf</location>
+            <title>Title 1</title>
+            <titleSize>45</titleSize>
+            <titleFont>Helvetica</titleFont>
+            <description>Desc 1</description>
+            <descriptionSize>15</descriptionSize>
+            <descriptionFont>Helvetica-Bold</descriptionFont>
+          </pdf>
+          <pdf>
+            <location>${project.build.directory}/generated-docs/tribestream-security.pdf</location>
+            <title>Title 2</title>
+          </pdf>
+        </pdfs>
+        <mavenPdfs>
+          <pdf>
+            <location>com.foo:bar:1.0:pdf</location>
+            <title>Title 1</title>
+            <description>Desc 1</description>
+          </pdf>
+        </mavenPdfs>
+        <outputDir>${project.build.directory}/pdf</outputDir>
+        <outputName>all-in-one</outputName>
+        <attach>true</attach>
+        <classifier /> <!-- classifier of the generated attached pdf -->
+        <skip>false</skip>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+----
+
+NOTE: If a title or a description is specified, the PDF will be prefixed by a "title" page.

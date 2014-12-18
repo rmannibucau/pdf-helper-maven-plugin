@@ -72,25 +72,29 @@ public class PdfMergerMojoTest {
         assertTrue(output.exists());
 
         final PDDocument doc = PDDocument.load(output);
-        assertEquals(pageNumber * 2, doc.getNumberOfPages());
+        try {
+            assertEquals(pageNumber * 2, doc.getNumberOfPages());
 
-        for (int i = 1; i <= pageNumber; i++) {
-            final int titlePage = (i * 2) - 1;
-            {
-                final PDFTextStripper stripper = new PDFTextStripper();
-                stripper.setStartPage(titlePage);
-                stripper.setEndPage(titlePage);
-                final String rawText = stripper.getText(doc);
-                assertTrue(rawText, rawText.contains("P" + i));
-                assertTrue(rawText, rawText.contains("super page " + i));
+            for (int i = 1; i <= pageNumber; i++) {
+                final int titlePage = (i * 2) - 1;
+                {
+                    final PDFTextStripper stripper = new PDFTextStripper();
+                    stripper.setStartPage(titlePage);
+                    stripper.setEndPage(titlePage);
+                    final String rawText = stripper.getText(doc);
+                    assertTrue(rawText, rawText.contains("P" + i));
+                    assertTrue(rawText, rawText.contains("super page " + i));
+                }
+                {
+                    final int nextPage = titlePage + 1;
+                    final PDFTextStripper stripper = new PDFTextStripper();
+                    stripper.setStartPage(nextPage);
+                    stripper.setEndPage(nextPage);
+                    assertEquals("Page #" + i, stripper.getText(doc).trim());
+                }
             }
-            {
-                final int nextPage = titlePage + 1;
-                final PDFTextStripper stripper = new PDFTextStripper();
-                stripper.setStartPage(nextPage);
-                stripper.setEndPage(nextPage);
-                assertEquals("Page #" + i, stripper.getText(doc).trim());
-            }
+        } finally {
+            doc.close();
         }
     }
 
@@ -139,13 +143,17 @@ public class PdfMergerMojoTest {
         assertTrue(output.exists());
 
         final PDDocument doc = PDDocument.load(output);
-        assertEquals(pageNumber, doc.getNumberOfPages());
+        try {
+            assertEquals(pageNumber, doc.getNumberOfPages());
 
-        for (int i = 1; i <= pageNumber; i++) {
-            final PDFTextStripper stripper = new PDFTextStripper();
-            stripper.setStartPage(i);
-            stripper.setEndPage(i);
-            assertEquals("Page #" + i, stripper.getText(doc).trim());
+            for (int i = 1; i <= pageNumber; i++) {
+                final PDFTextStripper stripper = new PDFTextStripper();
+                stripper.setStartPage(i);
+                stripper.setEndPage(i);
+                assertEquals("Page #" + i, stripper.getText(doc).trim());
+            }
+        } finally {
+            doc.close();
         }
     }
 }

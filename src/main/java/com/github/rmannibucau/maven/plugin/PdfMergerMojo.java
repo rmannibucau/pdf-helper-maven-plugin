@@ -24,7 +24,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -34,7 +33,7 @@ public class PdfMergerMojo extends AbstractMojo {
     private List<Pdf> pdfs;
 
     @Parameter
-    private List<String> mavenPdfs;
+    private List<Pdf> mavenPdfs;
 
     @Parameter(property = "pdf-merger.outputName", defaultValue = "all-in-one.pdf")
     private String outputName;
@@ -73,88 +72,12 @@ public class PdfMergerMojo extends AbstractMojo {
         final PDFMergerUtility merger = new PDFMergerUtility();
         if (pdfs != null) {
             for (final Pdf pdf : pdfs) {
-                final boolean hasTitle = pdf.getTitle() != null && !pdf.getTitle().isEmpty();
-                final boolean hasDescription = pdf.getDescription() != null && !pdf.getDescription().isEmpty();
-                if (hasDescription || hasTitle) {
-                    try {
-                        final PDDocument document = new PDDocument();
-
-                        final PDPage page = new PDPage();
-                        document.addPage(page);
-
-                        final PDPageContentStream contentStream = new PDPageContentStream(document, page);
-                        final float titleHeight;
-                        if (hasTitle) { // should be 1 line
-                            contentStream.beginText();
-                            final int fontSize = pdf.getTitleSize();
-                            final PDType1Font font = PDType1Font.getStandardFont(pdf.getTitleFont());
-                            final float titleWidth = width(font, fontSize, pdf.getTitle());
-                            titleHeight = font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000 * fontSize;
-
-                            contentStream.setFont(font, fontSize);
-                            contentStream.moveTextPositionByAmount((page.getMediaBox().getWidth() - titleWidth) / 2, page.getMediaBox().getHeight() - 50 - titleHeight);
-                            contentStream.drawString(pdf.getTitle());
-                            contentStream.endText();
-                        } else {
-                            titleHeight = 0;
-                        }
-                        if (hasDescription) {
-                            final PDType1Font font = PDType1Font.getStandardFont(pdf.getDescriptionFont());
-
-                            final int margins = 80;
-                            final float maxWidth = page.getMediaBox().getWidth() - margins * 2;
-
-                            final List<String> lines = new LinkedList<String>();
-                            final StringBuilder current = new StringBuilder();
-                            for (char c : pdf.getDescription().toCharArray()) {
-                                if (c == ' ' || c == '\n') {
-                                    current.append(c); // we don't want "\n " or "\n\n"
-                                    if (width(font, pdf.getDescriptionSize(), current.toString()) > maxWidth) {
-                                        current.setLength(current.length() - 1); // strip this not readable character
-                                        lines.add(current.toString());
-                                        current.setLength(0);
-                                    }
-                                } else if (c == '.' || c == '!' || c == '?' || c == ':') {
-                                    current.append(c);
-                                    if (width(font, pdf.getDescriptionSize(), current.toString()) > maxWidth) {
-                                        lines.add(current.toString());
-                                        current.setLength(0);
-                                    }
-                                } else {
-                                    current.append(c);
-                                }
-                            }
-                            if (current.length() > 0) {
-                                lines.add(current.toString());
-                            }
-
-                            float positionY = 700 - (pdf.getDescriptionSize() + titleHeight);
-
-                            for (final String string : lines) {
-                                contentStream.beginText();
-                                contentStream.setFont(font, pdf.getDescriptionSize());
-                                contentStream.moveTextPositionByAmount(margins, positionY);
-                                contentStream.drawString(string);
-                                contentStream.endText();
-                                positionY = positionY - 20;
-                            }
-                        }
-                        contentStream.close();
-
-                        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        document.save(baos);
-                        document.close();
-                        merger.addSource(new ByteArrayInputStream(baos.toByteArray()));
-                    } catch (final Exception ioe) {
-                        throw new MojoExecutionException(ioe.getMessage(), ioe);
-                    }
-                }
-                merger.addSource(pdf.getLocation());
+                addPdf(merger, pdf, pdf.getLocation());
             }
         }
         if (mavenPdfs != null) {
-            for (final String coordinates : mavenPdfs) {
-                final String[] infos = coordinates.split(":");
+            for (final Pdf mavenPdf : mavenPdfs) {
+                final String[] infos = mavenPdf.getLocation().split(":");
                 final String type;
                 if (infos.length < 3) {
                     throw new MojoExecutionException("format for librairies should be <groupId>:<artifactId>:<version>[:<type>[:<classifier>]]");
@@ -182,6 +105,7 @@ public class PdfMergerMojo extends AbstractMojo {
                 request.setLocalRepository(session.getLocalRepository());
                 request.setRemoteRepositories(session.getRequest().getRemoteRepositories());
                 repositorySystem.resolve(request);
+                addPdf(merger, mavenPdf, artifact.getFile().getAbsolutePath());
                 merger.addSource(artifact.getFile());
             }
 
@@ -212,6 +136,86 @@ public class PdfMergerMojo extends AbstractMojo {
         } else {
             getLog().info("Generated PDF " + generated.getAbsolutePath());
         }
+    }
+
+    private void addPdf(final PDFMergerUtility merger, final Pdf pdf, final String fileLocation) throws MojoExecutionException {
+        final boolean hasTitle = pdf.getTitle() != null && !pdf.getTitle().isEmpty();
+        final boolean hasDescription = pdf.getDescription() != null && !pdf.getDescription().isEmpty();
+        if (hasDescription || hasTitle) {
+            try {
+                final PDDocument document = new PDDocument();
+
+                final PDPage page = new PDPage();
+                document.addPage(page);
+
+                final PDPageContentStream contentStream = new PDPageContentStream(document, page);
+                final float titleHeight;
+                if (hasTitle) { // should be 1 line
+                    contentStream.beginText();
+                    final int fontSize = pdf.getTitleSize();
+                    final PDType1Font font = PDType1Font.getStandardFont(pdf.getTitleFont());
+                    final float titleWidth = width(font, fontSize, pdf.getTitle());
+                    titleHeight = font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000 * fontSize;
+
+                    contentStream.setFont(font, fontSize);
+                    contentStream.moveTextPositionByAmount((page.getMediaBox().getWidth() - titleWidth) / 2, page.getMediaBox().getHeight() - 50 - titleHeight);
+                    contentStream.drawString(pdf.getTitle());
+                    contentStream.endText();
+                } else {
+                    titleHeight = 0;
+                }
+                if (hasDescription) {
+                    final PDType1Font font = PDType1Font.getStandardFont(pdf.getDescriptionFont());
+
+                    final int margins = 80;
+                    final float maxWidth = page.getMediaBox().getWidth() - margins * 2;
+
+                    final List<String> lines = new LinkedList<String>();
+                    final StringBuilder current = new StringBuilder();
+                    for (char c : pdf.getDescription().toCharArray()) {
+                        if (c == ' ' || c == '\n') {
+                            current.append(c); // we don't want "\n " or "\n\n"
+                            if (width(font, pdf.getDescriptionSize(), current.toString()) > maxWidth) {
+                                current.setLength(current.length() - 1); // strip this not readable character
+                                lines.add(current.toString());
+                                current.setLength(0);
+                            }
+                        } else if (c == '.' || c == '!' || c == '?' || c == ':') {
+                            current.append(c);
+                            if (width(font, pdf.getDescriptionSize(), current.toString()) > maxWidth) {
+                                lines.add(current.toString());
+                                current.setLength(0);
+                            }
+                        } else {
+                            current.append(c);
+                        }
+                    }
+                    if (current.length() > 0) {
+                        lines.add(current.toString());
+                    }
+
+                    float positionY = 700 - (pdf.getDescriptionSize() + titleHeight);
+
+                    for (final String string : lines) {
+                        contentStream.beginText();
+                        contentStream.setFont(font, pdf.getDescriptionSize());
+                        contentStream.moveTextPositionByAmount(margins, positionY);
+                        contentStream.drawString(string);
+                        contentStream.endText();
+                        positionY = positionY - 20;
+                    }
+                }
+                contentStream.close();
+
+                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                document.save(baos);
+                document.close();
+                merger.addSource(new ByteArrayInputStream(baos.toByteArray()));
+            } catch (final Exception ioe) {
+                throw new MojoExecutionException(ioe.getMessage(), ioe);
+            }
+        }
+        merger.addSource(pdf.getLocation());
     }
 
     private float width(final PDType1Font font, final int fontSize, final String current) throws IOException {

@@ -86,6 +86,7 @@
         <configuration>
           <goalPrefix>pdf-helper</goalPrefix>
           <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+          <helpPackageName>com.github.rmannibucau.maven.plugin</helpPackageName>
         </configuration>
       </plugin>
     </plugins>
