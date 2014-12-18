@@ -203,12 +203,14 @@ public class PdfMergerMojo extends AbstractMojo {
         }
 
         if (attach) {
-            getLog().info("Attaching PDF " + getClass().getSimpleName());
+            getLog().info("Attaching PDF " + generated.getAbsolutePath());
             if (classifier != null && !classifier.isEmpty()) {
                 helper.attachArtifact(project, "pdf", classifier, generated);
             } else {
                 helper.attachArtifact(project, "pdf", generated);
             }
+        } else {
+            getLog().info("Generated PDF " + generated.getAbsolutePath());
         }
     }
 
